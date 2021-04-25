@@ -148,6 +148,7 @@ public class PlayerMidi : MonoBehaviour
         else if (e.Event.EventType == MidiEventType.NoteOff)
         {
             nbNote--;
+            nbNote = Mathf.Clamp(nbNote, 0, 10);
             currentNote++;
             // Debug.Log(((InstrumentNameEvent)e.Event).Text);
         }
@@ -231,16 +232,39 @@ public class PlayerMidi : MonoBehaviour
     private void Update()
     {
         int index = int.Parse(playback.GetCurrentTime(TimeSpanType.Midi).ToString());
+        if (Input.GetKey(KeyCode.DownArrow) && index + sizetex < sizetex * sizetex - 1)
+        {
+            index += sizetex;
+            nbNote = 0;
+            playback.MoveForward(new MidiTimeSpan(sizetex));
+            currentNote = index;
+        }
+
+        if (Input.GetKey(KeyCode.UpArrow) && index - sizetex >= 0)
+        {
+            index -= sizetex;
+            nbNote = 0;
+            playback.MoveBack(new MidiTimeSpan(sizetex));
+            currentNote = index;
+        }
+
+        if (Input.GetKey(KeyCode.RightArrow) && index + 1 < sizetex * sizetex - 1)
+        {
+            index++;
+            nbNote = 0;
+            playback.MoveForward(new MidiTimeSpan(1));
+            currentNote = index;
+        }
+
+        if (Input.GetKey(KeyCode.LeftArrow) && index - 1 >= 0)
+        {
+            index--;
+            nbNote = 0;
+            playback.MoveBack(new MidiTimeSpan(1));
+            currentNote = index;
+        }
         mat.SetInt("_Index", index);
         mat.SetInt("_nbNote", nbNote);
         mat.SetInt("_currentNote", currentNote);
-        if (Input.GetKey(KeyCode.DownArrow) && index + sizetex < sizetex * sizetex - 1)
-            playback.MoveForward(new MidiTimeSpan(sizetex));
-        if (Input.GetKey(KeyCode.UpArrow) && index - sizetex >= 0)
-            playback.MoveBack(new MidiTimeSpan(sizetex));
-        if (Input.GetKey(KeyCode.RightArrow) && index + 1 < sizetex * sizetex - 1)
-            playback.MoveForward(new MidiTimeSpan(1));
-        if (Input.GetKey(KeyCode.LeftArrow) && index - 1 >= 0)
-            playback.MoveBack(new MidiTimeSpan(1));
     }
 }

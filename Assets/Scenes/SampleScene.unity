@@ -302,7 +302,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   image: {fileID: 1807636538}
   prefab: {fileID: 5680727744364066732, guid: b6d0bb032f86fae468211faea3223b85, type: 3}
-  filePath: Pirate1.mid
+  filePath: Will_Smith_-_Just_the_Two_of_Us.mid
   texNotes: {fileID: 0}
   sizetex: 0
   mat: {fileID: 2100000, guid: c6e5194990786904a98a02e0bf6c7dea, type: 2}
@@ -395,10 +395,10 @@ RectTransform:
   m_Father: {fileID: 1912310188}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0.1, y: 0.1}
-  m_AnchoredPosition: {x: 600, y: 202.49998}
-  m_SizeDelta: {x: 240, y: 405}
+  m_AnchorMin: {x: 0.6, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1807636538
 MonoBehaviour:
