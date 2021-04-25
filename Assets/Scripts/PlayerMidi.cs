@@ -68,24 +68,13 @@ public sealed class ThreadTickGenerator : TickGenerator
 }
 public class PlayerMidi : MonoBehaviour
 {
-    struct valueNote
-    {
-        public float value; 
-        public float velocity;
-        public float octave;
-        public int color;
-    };
-
     [SerializeField] private Image image;
-    [SerializeField]
-    private GameObject prefab;
     [SerializeField] private string filePath = "";
     private List<Note> notes;
     private int position = 0;
     private MidiFile file;
     private Playback playback;
     private static OutputDevice outputDevice;
-    private List<valueNote> create;
     [SerializeField]
     private Texture2D texNotes;
 
@@ -160,8 +149,7 @@ public class PlayerMidi : MonoBehaviour
     {
         if (cam == null)
             cam = Camera.main;
-        if (create == null)
-            create = new List<valueNote>();
+       
         file = MidiFile.Read(Application.streamingAssetsPath + "/" + filePath);
         notes = (List<Note>)file.GetNotes();
         float maxNoteDuration = Single.NegativeInfinity;
