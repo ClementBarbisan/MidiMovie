@@ -126,7 +126,8 @@ public class PlayerMidi : MonoBehaviour
         if (e.Event.EventType == MidiEventType.NoteOn)
         {
             nbNote++;
-            // var tmp = (NoteOnEvent) (e.Event);
+            //var tmp = (NoteOnEvent) (e.Event);
+            
             // var tmpValue = new valueNote();
             // tmpValue.value = tmp.NoteNumber / 5f - 10f;
             // tmpValue.velocity = tmp.Velocity;
@@ -139,6 +140,7 @@ public class PlayerMidi : MonoBehaviour
             nbNote--;
             nbNote = Mathf.Clamp(nbNote, 0, 10);
             currentNote++;
+
             // Debug.Log(((InstrumentNameEvent)e.Event).Text);
         }
         // else
@@ -225,7 +227,6 @@ public class PlayerMidi : MonoBehaviour
             index += sizetex;
             nbNote = 0;
             playback.MoveForward(new MidiTimeSpan(sizetex));
-            currentNote = index;
         }
 
         if (Input.GetKey(KeyCode.UpArrow) && index - sizetex >= 0)
@@ -233,7 +234,6 @@ public class PlayerMidi : MonoBehaviour
             index -= sizetex;
             nbNote = 0;
             playback.MoveBack(new MidiTimeSpan(sizetex));
-            currentNote = index;
         }
 
         if (Input.GetKey(KeyCode.RightArrow) && index + 1 < sizetex * sizetex - 1)
@@ -241,7 +241,6 @@ public class PlayerMidi : MonoBehaviour
             index++;
             nbNote = 0;
             playback.MoveForward(new MidiTimeSpan(1));
-            currentNote = index;
         }
 
         if (Input.GetKey(KeyCode.LeftArrow) && index - 1 >= 0)
@@ -249,10 +248,11 @@ public class PlayerMidi : MonoBehaviour
             index--;
             nbNote = 0;
             playback.MoveBack(new MidiTimeSpan(1));
-            currentNote = index;
         }
         mat.SetInt("_Index", index);
         mat.SetInt("_nbNote", nbNote);
+        if (notesShader.Exists(vector => vector.x == index))
+            currentNote = notesShader.IndexOf(notesShader.Find(vector => vector.x == index));
         mat.SetInt("_currentNote", currentNote);
     }
 }
