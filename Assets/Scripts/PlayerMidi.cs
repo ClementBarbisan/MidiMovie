@@ -175,13 +175,15 @@ public class PlayerMidi : MonoBehaviour
             if (note.Octave > maxOctave)
                 maxOctave = note.Octave;
         }
+
+        float maxTime = float.Parse(file.GetDuration(TimeSpanType.Midi).ToString());
         sizetex = Mathf.FloorToInt(Mathf.Sqrt(notes[notes.Count - 1].Time + notes[notes.Count - 1].Length));
         texNotes = new Texture2D(sizetex, sizetex, TextureFormat.ARGB32, false);
         for (int i = 0; i < notes.Count; i++)
         {
             Color[] colors = new Color[notes[i].Length];
             notesShader.Add(new Vector3(notes[i].Time, notes[i].Length, notes[i].OffVelocity));
-            notesDataShader.Add(new Vector3(notes[i].NoteNumber, notes[i].Octave, notes[i].Velocity));
+            notesDataShader.Add(new Vector3(notes[i].NoteNumber/maxNoteNumber, notes[i].Octave/maxOctave, notes[i].Velocity/maxVelocity));
             for (int j = 0; j < notes[i].Length; j++)
             {
                 Color colTmp = texNotes.GetPixel(Mathf.CeilToInt(notes[i].Time + j) % sizetex,
@@ -251,8 +253,8 @@ public class PlayerMidi : MonoBehaviour
         }
         mat.SetInt("_Index", index);
         mat.SetInt("_nbNote", nbNote);
-        if (notesShader.Exists(vector => vector.x == index))
-            currentNote = notesShader.IndexOf(notesShader.Find(vector => vector.x == index));
+        if (notesShader.Exists(vector => vector.x + vector.y == index))
+            currentNote = notesShader.IndexOf(notesShader.Find(vector => vector.x + vector.y == index));
         mat.SetInt("_currentNote", currentNote);
     }
 }

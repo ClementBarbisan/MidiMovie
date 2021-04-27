@@ -88,7 +88,7 @@ Shader "Custom/RayMarching"
             }
             fixed3 Displace(fixed3 pt, int index)
             {
-                return fixed3(sin(5 * pt.x * _Notes[index].x), cos(5 * pt.y * _Notes[index].y),sin(5 * pt.z * _Notes[index].z));
+                return fixed3(sin(20 * pt.x * _Notes[index].x), cos(20 * pt.y * _Notes[index].y),sin(20 * pt.z * _Notes[index].z));
             }
             fixed2 sdBoxFrame( fixed3 p, fixed3 b, float e, float i)
             {
@@ -144,7 +144,7 @@ Shader "Custom/RayMarching"
                 {
                    // res = opU(res, sphereSDF(samplePoint + fixed3(_NotesData[_currentNote + i].x, _Notes[_currentNote + i].y, _NotesData[_currentNote + i].z) / 200, _currentNote + i, _NotesData[_currentNote + i].y / 20));
                    //res = opU(res, sdBox(samplePoint + fixed3(_NotesData[_currentNote + i].x, _Notes[_currentNote + i].y, _NotesData[_currentNote + i].z) / 200, fixed3(1, 1, 1), _currentNote + i));
-                   res = opU(res, opTwist(samplePoint + fixed3(_NotesData[_currentNote + i].x, _Notes[_currentNote + i].y, _NotesData[_currentNote + i].z) / 200, fixed3(1, 1, 1), 0.3,_currentNote + i) + length(Displace(samplePoint + fixed3(_NotesData[_currentNote + i].x, _Notes[_currentNote + i].y, _NotesData[_currentNote + i].z) / 200, i) / 5));
+                   res = opU(res, opTwist(samplePoint + fixed3(_NotesData[_currentNote + i].x, _Notes[_currentNote + i].y/1000, _NotesData[_currentNote + i].z), fixed3(1, 1, 1), 0.3,_currentNote + i) + length(Displace(samplePoint + fixed3(_NotesData[_currentNote + i].x, _Notes[_currentNote + i].y/1000, _NotesData[_currentNote + i].z), i)/5));
                 }
                 return res;
             }
