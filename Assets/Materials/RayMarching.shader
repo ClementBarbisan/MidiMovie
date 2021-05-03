@@ -4,7 +4,6 @@ Shader "Custom/RayMarching"
     {
         _MainTex ("Texture", 2D) = "white" {}
         _SizeTex("Size Texture", int) = 256
-        _Index("Index", int) = 0
         _nbNote ("Number note", int) = 0
         _currentNote ("Current note", int) = 0
     }
@@ -45,7 +44,6 @@ Shader "Custom/RayMarching"
             StructuredBuffer<float3> _Notes;
             StructuredBuffer<float3> _NotesData;
             sampler2D _MainTex;
-            uint _Index;
             uint _SizeTex;
             uint _nbNote;
             uint _currentNote;
@@ -93,7 +91,7 @@ Shader "Custom/RayMarching"
             }
             fixed2 sdBoxFrame( fixed3 p, fixed3 b, float e, float i)
             {
-              p = abs(mul(transpose(rotateX(_Time.z)), mul(transpose(rotateZ(_Time.z)), mul(transpose(rotateY(_Time.y)), p))))-b;
+              p = abs(mul(transpose(rotateX(_Time.z + _NotesData[i].y)), mul(transpose(rotateZ(_Time.z + _NotesData[i].x)), mul(transpose(rotateY(_Time.y + _NotesData[i].z)), p))))-b;
               fixed3 q = abs(p+e)-e;
               return fixed2(min(min(
                   length(max(fixed3(p.x,q.y,q.z),0.0))+min(max(p.x,max(q.y,q.z)),0.0),
@@ -150,7 +148,7 @@ Shader "Custom/RayMarching"
           
            fixed2 opTwist(fixed3 p, fixed3 b, float r, int i)
             {
-                float k =_NotesData[_currentNote + i].x; // or some other amount
+                float k =_NotesData[i].y; // or some other amount
                 float c = cos(k*float(p.y));
                 float s = sin(k*float(p.y));
                 float2x2  m = float2x2(c,-s,s,c);
@@ -179,7 +177,7 @@ Shader "Custom/RayMarching"
                    //res = opU(res, udQuad(samplePoint, fixed3(5, -5, -0), fixed3(5, 5, -0), fixed3(-5, 5, -0),fixed3(-5, -5, -0),_currentNote + i));
                    // res = opU(res, sphereSDF(samplePoint + fixed3(_NotesData[_currentNote + i].x, _Notes[_currentNote + i].y, _NotesData[_currentNote + i].z) / 200, _currentNote + i, _NotesData[_currentNote + i].y / 20));
                   // res = opU(res, sdBox(samplePoint + fixed3(_NotesData[_currentNote + i].x, _Notes[_currentNote + i].y, _NotesData[_currentNote + i].z) / 200, fixed3(1, 1, 1), _currentNote + i));
-                   res = opU(res, opTwist(samplePoint + fixed3(_NotesData[_currentNote + i].x, _NotesData[_currentNote + i].y, _NotesData[_currentNote + i].z), fixed3(_NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5), 0.3,_currentNote + i));
+                   res = opU(res, opTwist(samplePoint + fixed3(_NotesData[_currentNote + i].x, _NotesData[_currentNote + i].y, _NotesData[_currentNote + i].z), fixed3(_NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5), _NotesData[_currentNote + i].x,_currentNote + i));
                 }
                 return res;
             }
@@ -310,12 +308,12 @@ Shader "Custom/RayMarching"
                 fixed3 K_a = tex2D(_MainTex, fixed2(_Notes[dist.y].x % _SizeTex, _Notes[dist.y].x / _SizeTex));
                   if (int((i.uv.x) * _SizeTex) % 6 || int((i.uv.y) * _SizeTex) % 6)
                   {
-                      if((curUv.x * curUv.x + curUv.y * curUv.y > 0.001 * _NotesData[dist.y].x / 2)
-                        &&(curUv.y * curUv.y + curUv.x * curUv.x < 0.005 *_NotesData[dist.y].x / 2) ||
-                      (curUv.x * curUv.x + curUv.y * curUv.y > 0.001 * _NotesData[dist.y].y * 10)
-                      &&(curUv.y * curUv.y + curUv.x * curUv.x < 0.005 * _NotesData[dist.y].y * 10) ||
-                         (curUv.x * curUv.x + curUv.y * curUv.y > 0.001 * _NotesData[dist.y].z * 70)
-                         &&(curUv.y * curUv.y + curUv.x * curUv.x < 0.005 *_NotesData[dist.y].z * 70))
+                      if((curUv.x * curUv.x + curUv.y * curUv.y > 0.001 * _NotesData[dist.y].x)
+                        &&(curUv.y * curUv.y + curUv.x * curUv.x < 0.005 *_NotesData[dist.y].x) ||
+                      (curUv.x * curUv.x + curUv.y * curUv.y > 0.001 * _NotesData[dist.y].x * 10)
+                      &&(curUv.y * curUv.y + curUv.x * curUv.x < 0.005 * _NotesData[dist.y].x * 10) ||
+                         (curUv.x * curUv.x + curUv.y * curUv.y > 0.001 * _NotesData[dist.y].x * 70)
+                         &&(curUv.y * curUv.y + curUv.x * curUv.x < 0.005 *_NotesData[dist.y].x * 70))
                       {
                           return (fixed4(K_a.xyz * 0.1,0));
                       }
