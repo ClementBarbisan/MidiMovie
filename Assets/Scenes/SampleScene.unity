@@ -301,8 +301,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   image: {fileID: 1807636538}
-  prefab: {fileID: 5680727744364066732, guid: b6d0bb032f86fae468211faea3223b85, type: 3}
-  filePath: Will_Smith_-_Just_the_Two_of_Us.mid
+  filePath: Pirate1.mid
   texNotes: {fileID: 0}
   sizetex: 0
   mat: {fileID: 2100000, guid: c6e5194990786904a98a02e0bf6c7dea, type: 2}

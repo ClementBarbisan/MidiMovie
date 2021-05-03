@@ -37,6 +37,7 @@ Shader "Custom/RayMarching"
             {
                 v2f o;
                 o.vertex = UnityObjectToClipPos(v.vertex);
+                
                 o.uv = v.uv;
                 return o;
             }
@@ -48,11 +49,10 @@ Shader "Custom/RayMarching"
             uint _SizeTex;
             uint _nbNote;
             uint _currentNote;
-  fixed4x4 rotateY(float theta) 
+            fixed4x4 rotateY(float theta) 
             {
                 float c = cos(theta);
                 float s = sin(theta);
-            
                 return fixed4x4(
                     fixed4(c, 0, s, 0),
                     fixed4(0, 1, 0, 0),
@@ -88,11 +88,12 @@ Shader "Custom/RayMarching"
             }
             fixed3 Displace(fixed3 pt, int index)
             {
-                return fixed3(sin(20 * pt.x * _Notes[index].x), cos(20 * pt.y * _Notes[index].y),sin(20 * pt.z * _Notes[index].z));
+                return fixed3(sin(pt.x), sin(pt.y),sin(pt.z));
+//                return fixed3(sin(pt.x * _Notes[index].x), cos(pt.y * _Notes[index].y),sin(pt.z * _Notes[index].z));
             }
             fixed2 sdBoxFrame( fixed3 p, fixed3 b, float e, float i)
             {
-              p = abs(mul(transpose(rotateX(_Time.x)), mul(transpose(rotateZ(_Time.z)), p)))-b;
+              p = abs(mul(transpose(rotateX(_Time.z)), mul(transpose(rotateZ(_Time.z)), mul(transpose(rotateY(_Time.y)), p))))-b;
               fixed3 q = abs(p+e)-e;
               return fixed2(min(min(
                   length(max(fixed3(p.x,q.y,q.z),0.0))+min(max(p.x,max(q.y,q.z)),0.0),
@@ -100,8 +101,33 @@ Shader "Custom/RayMarching"
                   length(max(fixed3(q.x,q.y,p.z),0.0))+min(max(q.x,max(q.y,p.z)),0.0)), i);
             }
 
+            float dot2( in fixed3 v ) { return dot(v,v); }
             
-            
+            fixed2 udQuad( fixed3 p, fixed3 a, fixed3 b, fixed3 c, fixed3 d, int i )
+            {
+               p = mul(transpose(rotateX(_Time.z)), p);
+               p = mul(transpose(rotateZ(_Time.z)), p);
+
+              fixed3 ba = b - a; fixed3 pa = p - a;
+              fixed3 cb = c - b; fixed3 pb = p - b;
+              fixed3 dc = d - c; fixed3 pc = p - c;
+              fixed3 ad = a - d; fixed3 pd = p - d;
+              fixed3 nor = cross( ba, ad );
+
+              return fixed2( sqrt(
+                (sign(dot(cross(ba,nor),pa)) +
+                 sign(dot(cross(cb,nor),pb)) +
+                 sign(dot(cross(dc,nor),pc)) +
+                 sign(dot(cross(ad,nor),pd))<3.0)
+                 ?
+                 min( min( min(
+                 dot2(ba*clamp(dot(ba,pa)/dot2(ba),0.0,1.0)-pa),
+                 dot2(cb*clamp(dot(cb,pb)/dot2(cb),0.0,1.0)-pb) ),
+                 dot2(dc*clamp(dot(dc,pc)/dot2(dc),0.0,1.0)-pc) ),
+                 dot2(ad*clamp(dot(ad,pd)/dot2(ad),0.0,1.0)-pd) )
+                 :
+                 dot(nor,pa)*dot(nor,pa)/dot2(nor) ), i);
+            }
           
             fixed2 sdPlane( fixed3 p, fixed3 n, float h, int i )
             {
@@ -124,11 +150,18 @@ Shader "Custom/RayMarching"
           
            fixed2 opTwist(fixed3 p, fixed3 b, float r, int i)
             {
-                float k = 5.0; // or some other amount
+                float k =_NotesData[_currentNote + i].x; // or some other amount
                 float c = cos(k*float(p.y));
                 float s = sin(k*float(p.y));
                 float2x2  m = float2x2(c,-s,s,c);
                 fixed3 q = fixed3(mul(m,p.xz),p.y);
+                //fixed3 v1 = 1.5*cos(_Time.x*1.1 + fixed3(0.0,1.0,1.0) + 0.0 );
+	            //fixed3 v2 = 1.0*cos( _Time.x*1.2 + fixed3(0.0,2.0,3.0) + 2.0 );
+	            //fixed3 v3 = 1.0*cos( _Time*1.3 + fixed3(0.0,3.0,5.0) + 4.0 );
+                //fixed3 v4 = v1 + ( v3 - v2);
+	            //return udQuad( v1, v2, v3, v4, q, i );
+                //return udQuad(q, fixed3(5, -5, 1), fixed3(5, 5, 1), fixed3(-5, 5, 1),fixed3(-5, -5, 1),i);
+                //return udQuad(q, q + fixed3(1, 0, -0), q + fixed3(1, 1, -0),q + fixed3(0, 1, -0),q + fixed3(0, 0, -0),i);
                 return sdBoxFrame(q, b,r, i);
             } 
             
@@ -142,9 +175,11 @@ Shader "Custom/RayMarching"
                 fixed2 res = fixed2(10000000.0, 0.0);
                 for (int i = 0; i < _nbNote; i++)
                 {
+                   //res = opU(res, opTwist(samplePoint, 0, 0, _currentNote + i));
+                   //res = opU(res, udQuad(samplePoint, fixed3(5, -5, -0), fixed3(5, 5, -0), fixed3(-5, 5, -0),fixed3(-5, -5, -0),_currentNote + i));
                    // res = opU(res, sphereSDF(samplePoint + fixed3(_NotesData[_currentNote + i].x, _Notes[_currentNote + i].y, _NotesData[_currentNote + i].z) / 200, _currentNote + i, _NotesData[_currentNote + i].y / 20));
-                   //res = opU(res, sdBox(samplePoint + fixed3(_NotesData[_currentNote + i].x, _Notes[_currentNote + i].y, _NotesData[_currentNote + i].z) / 200, fixed3(1, 1, 1), _currentNote + i));
-                   res = opU(res, opTwist(samplePoint + fixed3(_NotesData[_currentNote + i].x, _Notes[_currentNote + i].y/1000, _NotesData[_currentNote + i].z), fixed3(1, 1, 1), 0.3,_currentNote + i) + length(Displace(samplePoint + fixed3(_NotesData[_currentNote + i].x, _Notes[_currentNote + i].y/1000, _NotesData[_currentNote + i].z), i)/5));
+                  // res = opU(res, sdBox(samplePoint + fixed3(_NotesData[_currentNote + i].x, _Notes[_currentNote + i].y, _NotesData[_currentNote + i].z) / 200, fixed3(1, 1, 1), _currentNote + i));
+                   res = opU(res, opTwist(samplePoint + fixed3(_NotesData[_currentNote + i].x, _NotesData[_currentNote + i].y, _NotesData[_currentNote + i].z), fixed3(_NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5), 0.3,_currentNote + i));
                 }
                 return res;
             }
@@ -171,23 +206,126 @@ Shader "Custom/RayMarching"
                 float z = 1.0 / tan(radians(fieldOfView));
                 return fixed3(xy, z);
             }
-            
+            /**
+             * Using the gradient of the SDF, estimate the normal on the surface at point p.
+             */
+            fixed3 estimateNormal(fixed3 p) {
+                return normalize(fixed3(
+                    sceneSDF(fixed3(p.x + 0.0001, p.y, p.z)).x - sceneSDF(fixed3(p.x - 0.0001, p.y, p.z)).x,
+                    sceneSDF(fixed3(p.x, p.y + 0.0001, p.z)).x - sceneSDF(fixed3(p.x, p.y - 0.0001, p.z)).x,
+                    sceneSDF(fixed3(p.x, p.y, p.z  + 0.0001)).x - sceneSDF(fixed3(p.x, p.y, p.z - 0.0001)).x
+                ));
+            }
+
+            /**
+             * Lighting contribution of a single point light source via Phong illumination.
+             * 
+             * The fixed3 returned is the RGB color of the light's contribution.
+             *
+             * k_a: Ambient color
+             * k_d: Diffuse color
+             * k_s: Specular color
+             * alpha: Shininess coefficient
+             * p: position of point being lit
+             * eye: the position of the camera
+             * lightPos: the position of the light
+             * lightIntensity: color/intensity of the light
+             *
+             * See https://en.wikipedia.org/wiki/Phong_reflection_model#Description
+             */
+            fixed3 phongContribForLight(fixed3 k_d, fixed3 k_s, float alpha, fixed3 p, fixed3 eye,
+                                      fixed3 lightPos, fixed3 lightIntensity) {
+                fixed3 N = estimateNormal(p);
+                fixed3 L = normalize(lightPos - p);
+                fixed3 V = normalize(eye - p);
+                fixed3 R = normalize(reflect(-L, N));
+                
+                float dotLN = dot(L, N);
+                float dotRV = dot(R, V);
+                
+                if (dotLN < 0.0) {
+                    // Light not visible from this point on the surface
+                    return fixed3(0.0, 0.0, 0.0);
+                } 
+                
+                if (dotRV < 0.0) {
+                    // Light reflection in opposite direction as viewer, apply only diffuse
+                    // component
+                    return lightIntensity * (k_d * dotLN);
+                }
+                return lightIntensity * (k_d * dotLN + k_s * pow(dotRV, alpha));
+            }
+
+            /**
+             * Lighting via Phong illumination.
+             * 
+             * The fixed3 returned is the RGB color of that point after lighting is applied.
+             * k_a: Ambient color
+             * k_d: Diffuse color
+             * k_s: Specular color
+             * alpha: Shininess coefficient
+             * p: position of point being lit
+             * eye: the position of the camera
+             *
+             * See https://en.wikipedia.org/wiki/Phong_reflection_model#Description
+             */
+            fixed3 phongIllumination(fixed3 k_a, fixed3 k_d, fixed3 k_s, float alpha, fixed3 p, fixed3 eye) {
+                const fixed3 ambientLight = 0.5 * fixed3(1.0, 1.0, 1.0);
+                fixed3 color = ambientLight * k_a;
+                
+                fixed3 light1Pos = fixed3(4.0 * sin(_Time.x),
+                                      2.0,
+                                      4.0 * cos(_Time.x));
+                fixed3 light1Intensity = fixed3(0.4, 0.4, 0.4);
+                
+                color += phongContribForLight(k_d, k_s, alpha, p, eye,
+                                              light1Pos,
+                                              light1Intensity);
+                
+                fixed3 light2Pos = fixed3(2.0 * sin(0.37 * _Time.x),
+                                      2.0 * cos(0.37 * _Time.x),
+                                      2.0);
+                fixed3 light2Intensity = fixed3(0.4, 0.4, 0.4);
+                
+                color += phongContribForLight(k_d, k_s, alpha, p, eye,
+                                              light2Pos,
+                                              light2Intensity);    
+                return color;
+            }
+
             
              fixed4 frag (v2f i) : SV_Target
              {
-                fixed2 fragCoord = fixed2(_Index % _SizeTex, _Index / _SizeTex);
-                //fixed4 col = tex2D(_MainTex, fixed2(fragCoord.x / _SizeTex, fragCoord.y / _SizeTex));
+                
+                fixed2 curUv = fixed2(i.uv.x - 0.5, i.uv.y - 0.5);
+                
                 fixed3 dir = rayDirection(45.0, i.uv);
-                //return fixed4(dir.x, dir.y, dir.z, 1);
-                fixed3 eye = fixed3(0.0, 0.0, -5.0);
+                fixed3 eye = fixed3(0.0, 0.0, -25.0);
                 fixed2 dist = shortestDistanceToSurface(eye, dir, 0, 100);
                 
                 if (dist.x > 100 - 0.0001) {
                     // Didn't hit anything
                     return fixed4(0.0, 0.0, 0.0, 0.0);
                 }
+                fixed3 K_a = tex2D(_MainTex, fixed2(_Notes[dist.y].x % _SizeTex, _Notes[dist.y].x / _SizeTex));
+                  if (int((i.uv.x) * _SizeTex) % 6 || int((i.uv.y) * _SizeTex) % 6)
+                  {
+                      if((curUv.x * curUv.x + curUv.y * curUv.y > 0.001 * _NotesData[dist.y].x / 2)
+                        &&(curUv.y * curUv.y + curUv.x * curUv.x < 0.005 *_NotesData[dist.y].x / 2) ||
+                      (curUv.x * curUv.x + curUv.y * curUv.y > 0.001 * _NotesData[dist.y].y * 10)
+                      &&(curUv.y * curUv.y + curUv.x * curUv.x < 0.005 * _NotesData[dist.y].y * 10) ||
+                         (curUv.x * curUv.x + curUv.y * curUv.y > 0.001 * _NotesData[dist.y].z * 70)
+                         &&(curUv.y * curUv.y + curUv.x * curUv.x < 0.005 *_NotesData[dist.y].z * 70))
+                      {
+                          return (fixed4(K_a.xyz * 0.1,0));
+                      }
+                  }
+                fixed3 K_d = fixed3(0.2, 0.2, 0.2);
+                fixed3 K_s = fixed3(1.0, 1.0, 1.0);
+                float shininess = 10.0;
                 
-                return tex2D(_MainTex, fixed2(_Notes[dist.y].x % _SizeTex, _Notes[dist.y].x / _SizeTex));
+                fixed3 color = phongIllumination(K_a, K_d, K_s, shininess, eye + dist.x * dir, eye);
+                return fixed4(color.xyz, 0);
                
               
             }
