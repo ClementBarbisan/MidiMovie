@@ -93,7 +93,7 @@ Shader "Custom/RayMarching"
             }
             fixed2 sdBoxFrame( fixed3 p, fixed3 b, float e, float i)
             {
-              p = abs(mul(transpose(rotateX(_Time.z)), mul(transpose(rotateZ(_Time.z)), mul(transpose(rotateY(_Time.y)), p))))-b;
+              //p = abs(mul(transpose(rotateX(_Time.z)), mul(transpose(rotateZ(_Time.z)), mul(transpose(rotateY(_Time.y)), p))))-b;
               p = abs(mul(transpose(rotateX(_Time.z + _NotesData[i].y)), mul(transpose(rotateZ(_Time.z + _NotesData[i].x)), mul(transpose(rotateY(_Time.y + _NotesData[i].z)), p))))-b;
               fixed3 q = abs(p+e)-e;
               return fixed2(min(min(
@@ -180,8 +180,8 @@ Shader "Custom/RayMarching"
                    //res = opU(res, udQuad(samplePoint, fixed3(5, -5, -0), fixed3(5, 5, -0), fixed3(-5, 5, -0),fixed3(-5, -5, -0),_currentNote + i));
                    // res = opU(res, sphereSDF(samplePoint + fixed3(_NotesData[_currentNote + i].x, _Notes[_currentNote + i].y, _NotesData[_currentNote + i].z) / 200, _currentNote + i, _NotesData[_currentNote + i].y / 20));
                   // res = opU(res, sdBox(samplePoint + fixed3(_NotesData[_currentNote + i].x, _Notes[_currentNote + i].y, _NotesData[_currentNote + i].z) / 200, fixed3(1, 1, 1), _currentNote + i));
-                   res = opU(res, opTwist(samplePoint + fixed3(_NotesData[_currentNote + i].x, _NotesData[_currentNote + i].y, _NotesData[_currentNote + i].z), fixed3(_NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5), 0.3,_currentNote + i));
-                   res = opU(res, opTwist(samplePoint + fixed3(_NotesData[_currentNote + i].x, _NotesData[_currentNote + i].y, _NotesData[_currentNote + i].z), fixed3(_NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5), _NotesData[_currentNote + i].x,_currentNote + i));
+                  // res = opU(res, opTwist(samplePoint + fixed3(_NotesData[_currentNote + i].x, _NotesData[_currentNote + i].y, _NotesData[_currentNote + i].z), fixed3(_NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5), 0.3,_currentNote + i));
+                   res = opU(res, opTwist(samplePoint + fixed3(_NotesData[_currentNote + i].x, _NotesData[_currentNote + i].y, _NotesData[_currentNote + i].z), fixed3(_NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5), _NotesData[_currentNote + i].y,_currentNote + i));
                 }
                 return res;
             }
