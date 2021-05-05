@@ -94,7 +94,8 @@ Shader "Custom/RayMarching"
             fixed2 sdBoxFrame( fixed3 p, fixed3 b, float e, float i)
             {
               //p = abs(mul(transpose(rotateX(_Time.z)), mul(transpose(rotateZ(_Time.z)), mul(transpose(rotateY(_Time.y)), p))))-b;
-              p = abs(mul(transpose(rotateX(_Time.z + _NotesData[i].y)), mul(transpose(rotateZ(_Time.z + _NotesData[i].x)), mul(transpose(rotateY(_Time.y + _NotesData[i].z)), p))))-b;
+             // p = abs(mul(transpose(rotateX(_Time.z + _NotesData[i].y)), mul(transpose(rotateZ(_Time.z + _NotesData[i].x)), mul(transpose(rotateY(_Time.y + _NotesData[i].z)), p))))-b;
+               p = abs(p) - b;
               fixed3 q = abs(p+e)-e;
               return fixed2(min(min(
                   length(max(fixed3(p.x,q.y,q.z),0.0))+min(max(p.x,max(q.y,q.z)),0.0),
@@ -106,8 +107,8 @@ Shader "Custom/RayMarching"
             
             fixed2 udQuad( fixed3 p, fixed3 a, fixed3 b, fixed3 c, fixed3 d, int i )
             {
-               p = mul(transpose(rotateX(_Time.z)), p);
-               p = mul(transpose(rotateZ(_Time.z)), p);
+               //p = mul(transpose(rotateX(_Time.z)), p);
+               //p = mul(transpose(rotateZ(_Time.z)), p);
 
               fixed3 ba = b - a; fixed3 pa = p - a;
               fixed3 cb = c - b; fixed3 pb = p - b;
@@ -148,10 +149,10 @@ Shader "Custom/RayMarching"
             }
           
           
-          
+           
            fixed2 opTwist(fixed3 p, fixed3 b, float r, int i)
             {
-                float k =_NotesData[i].x; // or some other amount
+                float k =_NotesData[i].x / 5; // or some other amount
                 float c = cos(k*float(p.y));
                 float s = sin(k*float(p.y));
                 float2x2  m = float2x2(c,-s,s,c);
@@ -165,7 +166,18 @@ Shader "Custom/RayMarching"
                 //return udQuad(q, q + fixed3(1, 0, -0), q + fixed3(1, 1, -0),q + fixed3(0, 1, -0),q + fixed3(0, 0, -0),i);
                 return sdBoxFrame(q, b,r, i);
             } 
-            
+             fixed2 opRep(fixed3 l, float  c, fixed3 p,  fixed3 b, float r, int i)
+            {
+                //p = mul(transpose(rotateX(_Time.z)), p);
+                //p = mul(transpose(rotateZ(_Time.z)), p);
+                p = mul(transpose(rotateX(_Time.z + _NotesData[i].y)), mul(transpose(rotateZ(_Time.z + _NotesData[i].x)), mul(transpose(rotateY(_Time.y + _NotesData[i].z)), p)));
+                fixed3 q = p-c*clamp(round(p/c),-l,l);
+                return opTwist( q, b, r, i);
+            }
+            fixed2 opSmoothUnion( fixed2 d1, fixed2 d2, float k, int i ) {
+                float h = clamp( 0.5 + 0.5*(d2.x-d1.x)/k, 0.0, 1.0 );
+                return fixed2(lerp( d2.x, d1.x, h ) - k*h*(1.0-h), i);
+            }
             fixed2 opU( fixed2 d1, fixed2 d2 )
             {
                 return (d1.x<d2.x) ? d1 : d2;
@@ -181,7 +193,8 @@ Shader "Custom/RayMarching"
                    // res = opU(res, sphereSDF(samplePoint + fixed3(_NotesData[_currentNote + i].x, _Notes[_currentNote + i].y, _NotesData[_currentNote + i].z) / 200, _currentNote + i, _NotesData[_currentNote + i].y / 20));
                   // res = opU(res, sdBox(samplePoint + fixed3(_NotesData[_currentNote + i].x, _Notes[_currentNote + i].y, _NotesData[_currentNote + i].z) / 200, fixed3(1, 1, 1), _currentNote + i));
                   // res = opU(res, opTwist(samplePoint + fixed3(_NotesData[_currentNote + i].x, _NotesData[_currentNote + i].y, _NotesData[_currentNote + i].z), fixed3(_NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5), 0.3,_currentNote + i));
-                   res = opU(res, opTwist(samplePoint + fixed3(_NotesData[_currentNote + i].x, _NotesData[_currentNote + i].y, _NotesData[_currentNote + i].z), fixed3(_NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5), _NotesData[_currentNote + i].y,_currentNote + i));
+                  //res = opU(res, opTwist(samplePoint + fixed3(_NotesData[_currentNote + i].x, _NotesData[_currentNote + i].y, _NotesData[_currentNote + i].z), fixed3(_NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5), _NotesData[_currentNote + i].y,_currentNote + i));
+                   res = opU(res,opRep(fixed3(_NotesData[_currentNote + i].x * 2,_NotesData[_currentNote + i].z * 2,_NotesData[_currentNote + i].y), _NotesData[_currentNote + i].z * 10,samplePoint + fixed3(_NotesData[_currentNote + i].x, _NotesData[_currentNote + i].y, _NotesData[_currentNote + i].z), fixed3(_NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5), _NotesData[_currentNote + i].y,_currentNote + i));
                 }
                 return res;
             }
@@ -310,7 +323,7 @@ Shader "Custom/RayMarching"
                     return fixed4(0.0, 0.0, 0.0, 0.0);
                 }
                 fixed3 K_a = tex2D(_MainTex, fixed2(_Notes[dist.y].x % _SizeTex, _Notes[dist.y].x / _SizeTex));
-                  if (int((curUv.x) * _SizeTex) % (int(distance(curUv, fixed2(0, 0)) * _SinTime.w * _NotesData[dist.y].z * 30) + 1)||  int((curUv.y) * _SizeTex) % (int(distance(curUv, fixed2(0, 0))*_SinTime.w * _NotesData[dist.y].z * 30) + 1))
+                  if (int((curUv.x) * _SizeTex) % (int(distance(curUv, fixed2(0, 0)) * _SinTime.w * _NotesData[dist.y].z * 50) + 1)||  int((curUv.y) * _SizeTex) % (int(distance(curUv, fixed2(0, 0))*_SinTime.w * _NotesData[dist.y].z * 50) + 1))
                   {
                       if((curUv.x * curUv.x + curUv.y * curUv.y > 0.001 * _NotesData[dist.y].x / 2)
                         &&(curUv.y * curUv.y + curUv.x * curUv.x < 0.005 *_NotesData[dist.y].x / 2) ||
