@@ -194,7 +194,7 @@ Shader "Custom/RayMarching"
                   // res = opU(res, sdBox(samplePoint + fixed3(_NotesData[_currentNote + i].x, _Notes[_currentNote + i].y, _NotesData[_currentNote + i].z) / 200, fixed3(1, 1, 1), _currentNote + i));
                   // res = opU(res, opTwist(samplePoint + fixed3(_NotesData[_currentNote + i].x, _NotesData[_currentNote + i].y, _NotesData[_currentNote + i].z), fixed3(_NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5), 0.3,_currentNote + i));
                   //res = opU(res, opTwist(samplePoint + fixed3(_NotesData[_currentNote + i].x, _NotesData[_currentNote + i].y, _NotesData[_currentNote + i].z), fixed3(_NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5), _NotesData[_currentNote + i].y,_currentNote + i));
-                   res = opU(res,opRep(fixed3(_NotesData[_currentNote + i].x * 2,_NotesData[_currentNote + i].z * 2,_NotesData[_currentNote + i].y), _NotesData[_currentNote + i].z * 10,samplePoint + fixed3(_NotesData[_currentNote + i].x, _NotesData[_currentNote + i].y, _NotesData[_currentNote + i].z), fixed3(_NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5), _NotesData[_currentNote + i].y,_currentNote + i));
+                   res = opU(res,opRep(fixed3(_NotesData[_currentNote + i].x * 2,_NotesData[_currentNote + i].z * 2,_NotesData[_currentNote + i].y), _NotesData[_currentNote + i].z * 5,samplePoint + fixed3(_NotesData[_currentNote + i].x, _NotesData[_currentNote + i].y, _NotesData[_currentNote + i].z), fixed3(_NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5, _NotesData[_currentNote + i].x * 5), _NotesData[_currentNote + i].y,_currentNote + i));
                 }
                 return res;
             }
@@ -323,7 +323,7 @@ Shader "Custom/RayMarching"
                     return fixed4(0.0, 0.0, 0.0, 0.0);
                 }
                 fixed3 K_a = tex2D(_MainTex, fixed2(_Notes[dist.y].x % _SizeTex, _Notes[dist.y].x / _SizeTex));
-                  if (int((curUv.x) * _SizeTex) % (int(distance(curUv, fixed2(0, 0)) * _SinTime.w * _NotesData[dist.y].z * 50) + 1)||  int((curUv.y) * _SizeTex) % (int(distance(curUv, fixed2(0, 0))*_SinTime.w * _NotesData[dist.y].z * 50) + 1))
+                  if (int((curUv.x) * _SizeTex) % (int(distance(curUv, fixed2(0, 0)) * _SinTime.w * _NotesData[dist.y].z * 10) + 1)||  int((curUv.y) * _SizeTex) % (int(distance(curUv, fixed2(0, 0))*_SinTime.w * _NotesData[dist.y].z * 10) + 1))
                   {
                       if((curUv.x * curUv.x + curUv.y * curUv.y > 0.001 * _NotesData[dist.y].x / 2)
                         &&(curUv.y * curUv.y + curUv.x * curUv.x < 0.005 *_NotesData[dist.y].x / 2) ||
