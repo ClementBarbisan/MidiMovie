@@ -9,6 +9,7 @@ using Melanchall.DryWetMidi.Interaction;
 using Melanchall.DryWetMidi.MusicTheory;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
@@ -88,6 +89,8 @@ public class PlayerMidi : MonoBehaviour
     private List<Vector3> notesDataShader = new List<Vector3>();
     private ComputeBuffer buffer;
     private ComputeBuffer bufferData;
+    private RenderTexture _bufferResult;
+    private RawImage _imageRaw;
     private void OnApplicationQuit()
     {
         Debug.Log("Off");
@@ -175,10 +178,18 @@ public class PlayerMidi : MonoBehaviour
             if (note.Octave > maxOctave)
                 maxOctave = note.Octave;
         }
-
         float maxTime = float.Parse(file.GetDuration(TimeSpanType.Midi).ToString());
         sizetex = Mathf.FloorToInt(Mathf.Sqrt(notes[notes.Count - 1].Time + notes[notes.Count - 1].Length));
         texNotes = new Texture2D(sizetex, sizetex, TextureFormat.ARGB32, false);
+        texNotes.wrapMode = TextureWrapMode.Repeat;
+        _bufferResult = new RenderTexture(texNotes.width, texNotes.height, 50, RenderTextureFormat.ARGB32, 0);
+        _bufferResult.format = RenderTextureFormat.ARGBFloat;
+        _bufferResult.wrapMode = TextureWrapMode.Repeat;
+        _bufferResult.enableRandomWrite = true;
+        _bufferResult.depth = 0;
+        _bufferResult.volumeDepth = 50;
+        _bufferResult.dimension = TextureDimension.Tex3D;
+        _bufferResult.Create();
         for (int i = 0; i < notes.Count; i++)
         {
             Color[] colors = new Color[notes[i].Length];
@@ -209,7 +220,9 @@ public class PlayerMidi : MonoBehaviour
         image.sprite = tmpSprite;
         outputDevice = OutputDevice.GetById(0);
         outputDevice.EventSent += OnEventSentFunction;
-        
+        _imageRaw = FindObjectOfType<RawImage>();
+        mat.SetTexture("_ResultBuffer", _bufferResult);
+        Graphics.SetRandomWriteTarget(1, _bufferResult);
         playback = file.GetPlayback(outputDevice,
             new MidiClockSettings
             {
