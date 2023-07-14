@@ -304,8 +304,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   image: {fileID: 1807636538}
-  filePath: Pirate1
+  filePath: Will_Smith_-_Just_the_Two_of_Us
   mat: {fileID: 2100000, guid: c6e5194990786904a98a02e0bf6c7dea, type: 2}
+  pixelatedEffect: {fileID: 2100000, guid: 296358c0f3988a04d8b5c4b0a31f287c, type: 2}
 --- !u!20 &519420031
 Camera:
   m_ObjectHideFlags: 0
