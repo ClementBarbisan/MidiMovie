@@ -76,12 +76,9 @@ public class PlayerMidi : MonoBehaviour
     private MidiFile file;
     private Playback playback;
     private static OutputDevice outputDevice;
-    [SerializeField]
     private Texture2D texNotes;
-
     private int nbNote = 0;
-
-    [FormerlySerializedAs("size")] [SerializeField] private int sizetex;
+    private int sizetex;
     private Camera cam;
     [SerializeField] private Material mat;
     private int currentNote = 0;
@@ -91,6 +88,8 @@ public class PlayerMidi : MonoBehaviour
     private ComputeBuffer bufferData;
     private RenderTexture _bufferResult;
     private RawImage _imageRaw;
+    [SerializeField] private Material pixelatedEffect;
+
     private void OnApplicationQuit()
     {
         Debug.Log("Off");
@@ -155,7 +154,7 @@ public class PlayerMidi : MonoBehaviour
         if (cam == null)
             cam = Camera.main;
        
-        file = MidiFile.Read(Application.streamingAssetsPath + "/" + filePath);
+        file = MidiFile.Read(Application.streamingAssetsPath + "/" + filePath + ".mid");
         notes = (List<Note>)file.GetNotes();
         float maxNoteDuration = Single.NegativeInfinity;
         float minNoteDuration = Single.PositiveInfinity;
@@ -213,6 +212,7 @@ public class PlayerMidi : MonoBehaviour
         bufferData.SetData(notesDataShader.ToArray());
         mat.SetBuffer("_Notes", buffer);
         mat.SetBuffer("_NotesData", bufferData);
+        pixelatedEffect.SetBuffer("_NotesData", bufferData);
         mat.SetTexture("_MainTex", texNotes);
         mat.SetInt("_SizeTex", sizetex);
         Sprite tmpSprite = Sprite.Create(texNotes, new Rect(Vector2.zero, new Vector2(sizetex, sizetex)), Vector2.zero);
@@ -232,6 +232,11 @@ public class PlayerMidi : MonoBehaviour
         playback.Start();
         // playback.TrackNotes = true;
         
+    }
+
+    private void OnRenderImage(RenderTexture src, RenderTexture dest)
+    {
+        Graphics.Blit(src, dest, pixelatedEffect);
     }
 
     private void Update()
@@ -269,5 +274,6 @@ public class PlayerMidi : MonoBehaviour
         if (notesShader.Exists(vector => vector.x + vector.y == index))
             currentNote = notesShader.IndexOf(notesShader.Find(vector => vector.x + vector.y == index));
         mat.SetInt("_currentNote", currentNote);
+        pixelatedEffect.SetInt("_currentNote", currentNote);
     }
 }
