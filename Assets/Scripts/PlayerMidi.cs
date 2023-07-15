@@ -69,7 +69,7 @@ public sealed class ThreadTickGenerator : TickGenerator
 }
 public class PlayerMidi : MonoBehaviour
 {
-    [SerializeField] private Image image;
+    // [SerializeField] private Image image;
     [SerializeField] private string filePath = "";
     private List<Note> notes;
     private int position = 0;
@@ -79,7 +79,6 @@ public class PlayerMidi : MonoBehaviour
     private Texture2D texNotes;
     private int nbNote = 0;
     private int sizetex;
-    private Camera cam;
     [SerializeField] private Material mat;
     private int currentNote = 0;
     private List<Vector3> notesShader = new List<Vector3>();
@@ -87,8 +86,11 @@ public class PlayerMidi : MonoBehaviour
     private ComputeBuffer buffer;
     private ComputeBuffer bufferData;
     private RenderTexture _bufferResult;
-    private RawImage _imageRaw;
+    // private RawImage _imageRaw;
     [SerializeField] private Material pixelatedEffect;
+    private RenderTexture tmpTex;
+    private float maxNoteNumber;
+    private float maxOctave;
 
     private void OnApplicationQuit()
     {
@@ -151,17 +153,14 @@ public class PlayerMidi : MonoBehaviour
     // Start is called before the first frame update
     void OnEnable()
     {
-        if (cam == null)
-            cam = Camera.main;
-       
         file = MidiFile.Read(Application.streamingAssetsPath + "/" + filePath + ".mid");
         notes = (List<Note>)file.GetNotes();
         float maxNoteDuration = Single.NegativeInfinity;
         float minNoteDuration = Single.PositiveInfinity;
         float maxVelocity = Single.NegativeInfinity;
-        float maxNoteNumber = Single.NegativeInfinity;
+        maxNoteNumber = Single.NegativeInfinity;
         float maxChannel = 0;
-        float maxOctave = 0;
+        maxOctave = 0;
         foreach (Note note in notes)
         {
             if (note.Channel > maxChannel)
@@ -213,14 +212,17 @@ public class PlayerMidi : MonoBehaviour
         mat.SetBuffer("_Notes", buffer);
         mat.SetBuffer("_NotesData", bufferData);
         pixelatedEffect.SetBuffer("_NotesData", bufferData);
+        pixelatedEffect.SetFloat("_maxNbNote", maxNoteNumber);
+        mat.SetFloat("_maxNbNote", maxNoteNumber);
+        pixelatedEffect.SetFloat("_maxOctave", maxOctave);
         mat.SetTexture("_MainTex", texNotes);
         mat.SetInt("_SizeTex", sizetex);
-        Sprite tmpSprite = Sprite.Create(texNotes, new Rect(Vector2.zero, new Vector2(sizetex, sizetex)), Vector2.zero);
+        // Sprite tmpSprite = Sprite.Create(texNotes, new Rect(Vector2.zero, new Vector2(sizetex, sizetex)), Vector2.zero);
         mat.SetInt("_nbNote", nbNote);
-        image.sprite = tmpSprite;
+        // image.sprite = tmpSprite;
         outputDevice = OutputDevice.GetById(0);
         outputDevice.EventSent += OnEventSentFunction;
-        _imageRaw = FindObjectOfType<RawImage>();
+        // _imageRaw = FindObjectOfType<RawImage>();
         mat.SetTexture("_ResultBuffer", _bufferResult);
         Graphics.SetRandomWriteTarget(1, _bufferResult);
         playback = file.GetPlayback(outputDevice,
@@ -228,7 +230,6 @@ public class PlayerMidi : MonoBehaviour
             {
                 CreateTickGeneratorCallback = () => new ThreadTickGenerator()
             });
-        playback.Loop = true;
         playback.Start();
         // playback.TrackNotes = true;
         
@@ -236,12 +237,14 @@ public class PlayerMidi : MonoBehaviour
 
     private void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
-        Graphics.Blit(src, dest, pixelatedEffect);
+        Graphics.Blit(src, tmpTex, mat);
+        Graphics.Blit(tmpTex, dest, pixelatedEffect);
     }
 
     private void Update()
     {
         int index = int.Parse(playback.GetCurrentTime(TimeSpanType.Midi).ToString());
+
         if (Input.GetKey(KeyCode.DownArrow) && index + sizetex < sizetex * sizetex - 1)
         {
             index += sizetex;
@@ -275,5 +278,12 @@ public class PlayerMidi : MonoBehaviour
             currentNote = notesShader.IndexOf(notesShader.Find(vector => vector.x + vector.y == index));
         mat.SetInt("_currentNote", currentNote);
         pixelatedEffect.SetInt("_currentNote", currentNote);
+        pixelatedEffect.SetInt("_nbNote", nbNote);
+        float coeff = (int)((float)notes[currentNote].NoteNumber / maxNoteNumber + 0.5) > 0 ? 1 : 0;
+        mat.SetFloat("_coeff", coeff);
+        if (!playback.IsRunning && index > 10 || Input.GetKeyDown(KeyCode.Escape))
+        {
+            Application.Quit();
+        }
     }
 }

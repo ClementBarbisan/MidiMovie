@@ -29,13 +29,16 @@ Shader "Pixelate" {
                 }
                 StructuredBuffer<float3> _NotesData;
                 uint _currentNote;
+                uint _nbNote;
+                float _maxNbNote;
+                float _maxOctave;
                 sampler2D _PixelationGrabTexture;
            
                 float4 frag(v2f IN) : COLOR {
                     float2 steppedUV = IN.grabUV.xy/IN.grabUV.w;
-                    steppedUV /= _CellSize.xy * _NotesData[_currentNote].xy;
+                    steppedUV /= _NotesData[_currentNote].xy / float2(_maxNbNote * 3, _maxOctave * 3);
                     steppedUV = round(steppedUV);
-                    steppedUV *= _CellSize.xy * _NotesData[_currentNote].xy;
+                    steppedUV *= _NotesData[_currentNote].xy / float2(_maxNbNote * 3, _maxOctave * 3);
                     return tex2D(_PixelationGrabTexture, steppedUV);
                 }
             ENDCG

@@ -7,11 +7,8 @@ Shader "Custom/RayMarching"
 //        _SizeTex("Size Texture", int) = 256
 //        _Index("Index", int) = 0
         _BackColor ("Color Background", Color) = (1, 1,1 ,1)
-        _BufferSize("BufferSize", Range(1, 50)) = 2
-//        _nbNote ("Number note", int) = 0
-//        _currentNote ("Current note", int) = 0
-        _CoeffColor("Coefficient Buffer Color", float) = 1.2
-        _CoeffAlpha ("Coefficient Alpha", int) = 2
+//        _nbNote ("Number note", int
+        _coeff ("Coeff", int) = 0
     }
     SubShader
     {
@@ -56,13 +53,12 @@ Shader "Custom/RayMarching"
             RWTexture3D<float4> _ResultBuffer;
             Texture2D<float4> _MainTex;
             float4 _BackColor;
-            float _CoeffColor;
-            int _CoeffAlpha;
             uint _Index;
-            uint _BufferSize;
             uint _SizeTex;
             uint _nbNote;
             uint _currentNote;
+            float _maxNbNote;
+            float _coeff;
             fixed4x4 rotateY(float theta) 
             {
                 float c = cos(theta);
@@ -322,37 +318,37 @@ Shader "Custom/RayMarching"
             
              fixed4 frag (v2f i) : SV_Target
              {
-                
                 fixed2 curUv = fixed2(i.uv.x - 0.5, i.uv.y - 0.5);
                 
                 fixed3 dir = rayDirection(45.0, i.uv);
                 fixed3 eye = fixed3(0.0, 0.0, -25.0);
                 fixed2 dist = shortestDistanceToSurface(eye, dir, 0, 100);
                 uint2 curIndex = uint2(_Notes[dist.y].x % _SizeTex, _Notes[dist.y].x / _SizeTex);
+                 // _coeff = asuint(_NotesData[_currentNote].x + 0.25) > 0 ? 1 : 0;
                 [loop]
-                for (uint i = _BufferSize - 1; i > 0; i--)
+                for (uint i = 50 - 1; i > 0; i--)
                 {
                    // _ResultBuffer[uint3(curIndex.xy, i)] += _ResultBuffer.Load(uint3(curIndex.xy, i - 1));
-                   _ResultBuffer[uint3(curIndex.xy, i)] = _ResultBuffer.Load(uint3(curIndex.xy, i - 1)) / _CoeffColor;
+                   _ResultBuffer[uint3(curIndex.xy, i)] = _ResultBuffer.Load(uint3(curIndex.xy, i - 1)) / _coeff;
                 }
                 [loop]
-                for (int l = 0; l < _BufferSize; l++)
+                for (int l = 0; l < 50; l++)
                 {
                     dist.x +=  _ResultBuffer[uint3(curIndex.xy, l)].w;
                 }
-                dist.x /= _BufferSize;
+                dist.x /= 50;
                 fixed3 K_a = fixed3(_MainTex[uint2(_Notes[dist.y].x % _SizeTex, _Notes[dist.y].x / _SizeTex)].xyz);
 //                  fixed3 K_a = tex2D(_MainTex, fixed2(_Notes[dist.y].x % _SizeTex, _Notes[dist.y].x / _SizeTex));
                 // fixed3 K_a = fixed3(0.25, 0.25, 0.25);
-                if (int((curUv.x) * _SizeTex) % (int(distance(curUv, fixed2(0, 0)) * _SinTime.w * _NotesData[dist.y].z * 10) + 1)
-                  ||  int((curUv.y) * _SizeTex) % (int(distance(curUv, fixed2(0, 0))*_SinTime.w * _NotesData[dist.y].z * 10) + 1))
+                if (int((curUv.x) * _SizeTex) % (int(distance(curUv, fixed2(0, 0)) * _SinTime.w * _NotesData[dist.y].z * _NotesData[dist.y].x * 10) + 1)
+                  ||  int((curUv.y) * _SizeTex) % (int(distance(curUv, fixed2(0, 0)) * _SinTime.w * _NotesData[dist.y].z * _NotesData[dist.y].x * 10) + 1))
                 {
                   if((curUv.x * curUv.x + curUv.y * curUv.y > 0.001 * _NotesData[dist.y].x / 2)
                     &&(curUv.y * curUv.y + curUv.x * curUv.x < 0.005 *_NotesData[dist.y].x / 2) ||
                   (curUv.x * curUv.x + curUv.y * curUv.y > 0.001 * _NotesData[dist.y].z * 10)
                   &&(curUv.y * curUv.y + curUv.x * curUv.x < 0.005 * _NotesData[dist.y].z * 10) ||
-                     (curUv.x * curUv.x + curUv.y * curUv.y > 0.001 * _NotesData[dist.y].x * 70)
-                     &&(curUv.y * curUv.y + curUv.x * curUv.x < 0.005 *_NotesData[dist.y].x * 70))
+                     (curUv.x * curUv.x + curUv.y * curUv.y > 0.001 * _NotesData[dist.y].y * 70)
+                     &&(curUv.y * curUv.y + curUv.x * curUv.x < 0.005 *_NotesData[dist.y].y * 70))
                   {
                       return (fixed4(K_a.xyz * 0.1,1.0)) * _BackColor;
                   }
@@ -369,11 +365,11 @@ Shader "Custom/RayMarching"
                 fixed4 finalColor = fixed4(phongIllumination(K_a, K_d, K_s, shininess, eye + dist.x * dir, eye).xyz, 1.0);
                  _ResultBuffer[uint3(curIndex.xy, 0)] = fixed4(finalColor.xyz, dist.x);
                  [loop]
-                 for (uint j = 0; j < _BufferSize; j++)
+                 for (uint j = 0; j < 50; j++)
                  {
                     finalColor += _ResultBuffer.Load(uint3(curIndex.xy, j));                     
                  }
-                 return (finalColor / _CoeffAlpha);
+                 return (finalColor / 0.75);
                
               
             }
